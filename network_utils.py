@@ -11,9 +11,10 @@ def generate_G_matrix(X, V, gama):
     (m, _) = V.shape
     G = np.ndarray(shape=(l, m), dtype=np.float32)
     i = 0
+
     for x in X:
         j = 0
-        for v, g in zip(V, gama):
+        for v, g in zip(V, gama[0, :]):
             G[i, j] = g_function(x, v, g)
             j = j + 1
         i = i + 1
