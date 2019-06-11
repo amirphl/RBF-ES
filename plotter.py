@@ -2,12 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_two_class_classification(X, y, V, yhad, scales):
+def plot_two_class_classification(X, y, V, yhad):
     L, n = X.shape
     assert n == 2
-
-    for i in range(n):
-        X[:, i] = X[:, i] * scales[i]
 
     mapping = {-1: ("red", "."), 1: ("blue", "."), -2: ("orange", "."), 2: ("black", ".")}
 

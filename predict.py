@@ -24,7 +24,7 @@ if __name__ == '__main__':
         print("Error on test data set:", evaluate_parameters(V, gama, X, y))
         print("Precision on test data set:", get_precision(X, y, V, gama))
         yhad = np.where(yhad > 0, 1, -1)
-        plot_two_class_classification(X, y, V, yhad, scales)
+        plot_two_class_classification(X, y, V, yhad)
     elif TYPE_OF_PROBLEM == 2:
         # TODO
         pass
