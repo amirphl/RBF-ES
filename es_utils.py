@@ -1,6 +1,7 @@
 import numpy as np
 import json
 import random
+import array
 from deap import base, creator
 from itertools import repeat
 from collections import Sequence
@@ -13,18 +14,21 @@ class MyIndividual:
 
 
 def initialize(X, y, minimize=True, path_to_json_initializer="guess.json", n=2, m=5, mu=0, sigma=1, indpb=0.1,
-               tournsize=3):
+               tournsize=3, MIN_VALUE=-3, MAX_VALUE=3, MIN_STRATEGY=0, MAX_STRATEGY=1):
     if minimize:
         creator.create("Fitness", base.Fitness, weights=(-1.0,))
     else:
         creator.create("Fitness", base.Fitness, weights=(1.0,))
 
-    creator.create("Individual", MyIndividual, fitness=creator.Fitness)
-    
+    creator.create("Individual", MyIndividual, typecode="d", fitness=creator.Fitness, V_strategy=None,
+                   gama_strategy=None)
+    creator.create("Strategy", array.array, typecode="d")
+
     toolbox = base.Toolbox()
 
     toolbox.register("individual_guess", initIndividual, creator.Individual)
-    toolbox.register("population_guess", initPopulation, list, toolbox.individual_guess, path_to_json_initializer, n, m)
+    toolbox.register("population_guess", initPopulation, list, toolbox.individual_guess, path_to_json_initializer, n, m,
+                     creator.Strategy, MIN_VALUE, MAX_VALUE, MIN_STRATEGY, MAX_STRATEGY)
 
     toolbox.register("mate", cxTwoPoint)  # TODO choose better crossover method for ES
     toolbox.register("mutate", mutGaussian, mu, sigma, indpb)  # TODO choose better mutation method for ES
@@ -34,20 +38,24 @@ def initialize(X, y, minimize=True, path_to_json_initializer="guess.json", n=2, 
     return toolbox
 
 
-def initIndividual(icls, content, n, m):
-    V_vector = np.random.rand(1, m * n)
-    gama_vector = np.random.rand(1, 5)
+def initIndividual(icls, content, n, m, scls, imin, imax, smin, smax):
+    V_vector = np.random.uniform(imin, imax, m * n).reshape(1, m * n)
+    gama_vector = np.random.uniform(imin, imax, m).reshape(1, m)
+    V_strategy = scls(np.random.uniform(smin, smax, m * n))
+    gama_strategy = scls(np.random.uniform(smin, smax, m))
     # TODO fill v and gama from file
     my_individual = icls()
     my_individual.gama = gama_vector
     my_individual.V = V_vector
+    my_individual.V_strategy = V_strategy
+    my_individual.gama_strategy = gama_strategy
     return my_individual
 
 
-def initPopulation(pcls, ind_init_guess, filename, n, m):
+def initPopulation(pcls, ind_init_guess, filename, n, m, scls, imin, imax, smin, smax):
     with open(filename, "r") as pop_file:
         contents = json.load(pop_file)
-    return pcls(ind_init_guess(c, n, m) for c in contents)
+    return pcls(ind_init_guess(c, n, m, scls, imin, imax, smin, smax) for c in contents)
 
 
 def evaluate(n, m, X, y, individual):
