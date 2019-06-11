@@ -22,7 +22,15 @@ def generate_G_matrix(X, V, gama):
 
 
 def generate_W_matrix(G, y):
-    return np.dot(np.dot(np.linalg.pinv(np.dot(G.T, G)), G.T), y)
+    try:
+        res = np.dot(np.dot(np.linalg.pinv(np.dot(G.T, G)), G.T), y)
+        return res
+    except np.linalg.LinAlgError:
+        print("SVD convergence error.")
+        _, m = G.shape
+        # TODO fill with random numbers?
+        res = np.random.uniform(size=m)
+        return res
 
 
 def generate_yhad_matrix(G, W):
@@ -40,3 +48,12 @@ def evaluate_parameters(V, gama, X, y):
     yhad = generate_yhad_matrix(G, W)
     error = mse(y, yhad)
     return error
+
+
+def get_precision(X, y, V, gama):
+    G = generate_G_matrix(X, V, gama)
+    W = generate_W_matrix(G, y)
+    yhad = generate_yhad_matrix(G, W)
+    yhad = np.where(yhad >= 0, 1, -1)
+    temp = np.abs(np.subtract(y, yhad))
+    return np.sum(temp) / 2
