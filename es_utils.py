@@ -13,8 +13,8 @@ class MyIndividual:
     pass
 
 
-def initialize(X, y, minimize=True, path_to_json_initializer="guess.json", n=2, m=5, mu=0, sigma=1, indpb=0.1,
-               tournsize=3, MIN_VALUE=-3, MAX_VALUE=3, MIN_STRATEGY=0, MAX_STRATEGY=1):
+def initialize(X, y, n, m, minimize=True, path_to_json_initializer="guess.json", mu=0, sigma=1, indpb=0.1,
+               tournsize=3, min_value=-3, max_value=3, min_strategy=0, max_strategy=1):
     if minimize:
         creator.create("Fitness", base.Fitness, weights=(-1.0,))
     else:
@@ -28,7 +28,7 @@ def initialize(X, y, minimize=True, path_to_json_initializer="guess.json", n=2, 
 
     toolbox.register("individual_guess", initIndividual, creator.Individual)
     toolbox.register("population_guess", initPopulation, list, toolbox.individual_guess, path_to_json_initializer, n, m,
-                     creator.Strategy, MIN_VALUE, MAX_VALUE, MIN_STRATEGY, MAX_STRATEGY)
+                     creator.Strategy, min_value, max_value, min_strategy, max_strategy)
 
     toolbox.register("mate", cxTwoPoint)  # TODO choose better crossover method for ES
     toolbox.register("mutate", mutGaussian, mu, sigma, indpb)  # TODO choose better mutation method for ES
@@ -41,8 +41,10 @@ def initialize(X, y, minimize=True, path_to_json_initializer="guess.json", n=2, 
 def initIndividual(icls, content, n, m, scls, imin, imax, smin, smax):
     V_vector = np.random.uniform(imin, imax, m * n).reshape(1, m * n)
     gama_vector = np.random.uniform(imin, imax, m).reshape(1, m)
-    V_strategy = scls(np.random.uniform(smin, smax, m * n))
-    gama_strategy = scls(np.random.uniform(smin, smax, m))
+    # V_strategy = scls(np.random.uniform(smin, smax, m * n))
+    # gama_strategy = scls(np.random.uniform(smin, smax, m))
+    V_strategy = scls(random.uniform(smin, smax) for _ in range(m * n))
+    gama_strategy = scls(random.uniform(smin, smax) for _ in range(m))
     # TODO fill v and gama from file
     my_individual = icls()
     my_individual.gama = gama_vector
@@ -182,3 +184,21 @@ def selTournament(individuals, k, tournsize, fit_attr="fitness"):
         aspirants = [random.choice(individuals) for _ in range(tournsize)]
         chosen.append(max(aspirants, key=attrgetter(fit_attr)))
     return chosen
+
+
+def checkStrategy(minstrategy):
+    def decorator(func):
+        def wrappper(*args, **kargs):
+            children = func(*args, **kargs)
+            for child in children:
+                for i, s in enumerate(child.V_strategy):
+                    if s < minstrategy:
+                        child.V_strategy[i] = minstrategy
+                for i, s in enumerate(child.gama_strategy):
+                    if s < minstrategy:
+                        child.gama_strategy[i] = minstrategy
+            return children
+
+        return wrappper
+
+    return decorator
