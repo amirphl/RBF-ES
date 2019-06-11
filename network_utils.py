@@ -29,7 +29,7 @@ def generate_W_matrix(G, y):
         print("SVD Convergence Error.")
         _, m = G.shape
         # TODO is it OK to fill with random numbers?
-        res = np.random.uniform(size=m)
+        res = np.random.uniform(low=-1, high=1, size=m)
         return res
 
 
@@ -43,18 +43,41 @@ def mse(y, yhad):
 
 
 def evaluate_parameters(V, gama, X, y):
+    from main import TYPE_OF_PROBLEM
     G = generate_G_matrix(X, V, gama)
     W = generate_W_matrix(G, y)
     yhad = generate_yhad_matrix(G, W)
-    yhad = np.where(yhad > 0, 1, -1)
-    error = mse(y, yhad)
+    error = None
+    if TYPE_OF_PROBLEM == 0:
+        error = mse(y, yhad)
+    elif TYPE_OF_PROBLEM == 1:
+        yhad = np.where(yhad > 0, 1, -1)
+        error = mse(y, yhad) / 2
+    elif TYPE_OF_PROBLEM == 2:
+        # TODO
+        pass
     return error
 
 
 def get_precision(X, y, V, gama):
+    from main import TYPE_OF_PROBLEM
     G = generate_G_matrix(X, V, gama)
     W = generate_W_matrix(G, y)
     yhad = generate_yhad_matrix(G, W)
-    yhad = np.where(yhad > 0, 1, -1)
     L, _ = G.shape
-    return mse(y, yhad) / (2 * L)
+    precision = None
+    if TYPE_OF_PROBLEM == 1:
+        yhad = np.where(yhad > 0, 1, -1)
+        precision = 1 - mse(y, yhad) / (2 * L)
+    elif TYPE_OF_PROBLEM == 2:
+        # TODO
+        pass
+    return precision
+
+
+def get_train_error(X, y, V, gama):
+    G = generate_G_matrix(X, V, gama)
+    W = generate_W_matrix(G, y)
+    yhad = generate_yhad_matrix(G, W)
+    error = mse(y, yhad)
+    return error
