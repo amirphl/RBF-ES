@@ -15,7 +15,7 @@ class MyIndividual:
 
 
 def initialize(X, y, n, m, weights=-1.0, path_to_json_initializer="guess.json", c=1, indpb=0.03,
-               tournsize=3, min_value=-3, max_value=3, min_strategy=0, max_strategy=1, alpha=0.1):
+               tournsize=5, min_value=-5, max_value=5, min_strategy=-1, max_strategy=1, alpha=0.1):
     creator.create("Fitness", base.Fitness, weights=(weights,))
 
     creator.create("Individual", MyIndividual, typecode="d", fitness=creator.Fitness, V_strategy=None,
@@ -59,7 +59,7 @@ def initIndividual(icls, content, n, m, scls, imin, imax, smin, smax):
 def initPopulation(pcls, ind_init_guess, filename, n, m, scls, imin, imax, smin, smax):
     with open(filename, "r") as pop_file:
         contents = json.load(pop_file)
-    return pcls(ind_init_guess(c, n, m, scls, imin, imax, smin, smax) for c in contents)
+    return pcls(ind_init_guess(c, n, m, scls, imin, imax, smin, smax) for c in range(10))
 
 
 def evaluate(n, m, X, y, individual):
