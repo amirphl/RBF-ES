@@ -14,7 +14,7 @@ class MyIndividual:
 
 
 def initialize(X, y, n, m, mu=10, weights=-1.0, c=1, indpb=0.03,
-               tournsize=5, min_value=-3, max_value=3, min_strategy=0, max_strategy=1, alpha=0.1):
+               tournsize=5, min_value=0, max_value=1, min_strategy=0, max_strategy=1, alpha=0.1):
     creator.create("Fitness", base.Fitness, weights=(weights,))
 
     creator.create("Individual", MyIndividual, typecode="d", fitness=creator.Fitness, V_strategy=None,
