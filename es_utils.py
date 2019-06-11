@@ -1,16 +1,15 @@
 import numpy as np
-from deap import base, creator, tools
 import json
 import random
-from network_utils import evaluate_parameters
+from deap import base, creator
 from itertools import repeat
 from collections import Sequence
 from operator import attrgetter
+from network_utils import evaluate_parameters
 
 
 class MyIndividual:
-    V = np.eye(1)
-    gama = np.eye(1)
+    pass
 
 
 def initialize(X, y, minimize=True, path_to_json_initializer="guess.json", n=2, m=5, mu=0, sigma=1, indpb=0.1,
@@ -21,7 +20,7 @@ def initialize(X, y, minimize=True, path_to_json_initializer="guess.json", n=2, 
         creator.create("Fitness", base.Fitness, weights=(1.0,))
 
     creator.create("Individual", MyIndividual, fitness=creator.Fitness)
-
+    
     toolbox = base.Toolbox()
 
     toolbox.register("individual_guess", initIndividual, creator.Individual)
@@ -36,15 +35,13 @@ def initialize(X, y, minimize=True, path_to_json_initializer="guess.json", n=2, 
 
 
 def initIndividual(icls, content, n, m):
-    V_vector = np.ndarray(shape=(1, n * m))
-    gama_vector = np.ndarray(shape=(m, 1))
+    V_vector = np.random.rand(1, m * n)
+    gama_vector = np.random.rand(1, 5)
     # TODO fill v and gama from file
-    V_vector.fill(0.5)
-    gama_vector.fill(0.5)
-    my_individual = MyIndividual
+    my_individual = icls()
     my_individual.gama = gama_vector
     my_individual.V = V_vector
-    return icls(my_individual)
+    return my_individual
 
 
 def initPopulation(pcls, ind_init_guess, filename, n, m):
@@ -53,11 +50,11 @@ def initPopulation(pcls, ind_init_guess, filename, n, m):
     return pcls(ind_init_guess(c, n, m) for c in contents)
 
 
-def evaluate(individual, n, m, X, y):
+def evaluate(n, m, X, y, individual):
     V_matrix = individual.V.reshape((m, n))
     gama_vector = individual.gama
     fitness = evaluate_parameters(V_matrix, gama_vector, X, y)
-    return fitness
+    return fitness,
 
 
 def mutGaussian(mu, sigma, indpb, individual):
@@ -140,6 +137,7 @@ def vector_crossover(ind1, ind2):
     _, s1 = ind1.shape
     _, s2 = ind2.shape
     size = min(s1, s2)
+
     cxpoint1 = random.randint(1, size)
     cxpoint2 = random.randint(1, size - 1)
     if cxpoint2 >= cxpoint1:
