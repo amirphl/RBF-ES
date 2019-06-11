@@ -22,8 +22,9 @@ def plot_two_class_classification(X, y, V, yhad):
     plt.xlabel('x1')
     plt.ylabel('x2')
     plt.suptitle('2 class classification')
+    plt.savefig('2_class_classification_output.png')
     plt.show()
-    plt.savefig('2 class classification output.png')
+
 
 
 def plot_regression_data(yhad):
