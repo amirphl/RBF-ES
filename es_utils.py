@@ -2,7 +2,7 @@ import numpy as np
 import json
 import random
 import array
-from deap import base, creator
+from deap import base, creator, tools
 from itertools import repeat
 from collections import Sequence
 from operator import attrgetter
@@ -13,12 +13,9 @@ class MyIndividual:
     pass
 
 
-def initialize(X, y, n, m, minimize=True, path_to_json_initializer="guess.json", mu=0, sigma=1, indpb=0.1,
-               tournsize=3, min_value=-3, max_value=3, min_strategy=0, max_strategy=1):
-    if minimize:
-        creator.create("Fitness", base.Fitness, weights=(-1.0,))
-    else:
-        creator.create("Fitness", base.Fitness, weights=(1.0,))
+def initialize(X, y, n, m, weights=-1.0, path_to_json_initializer="guess.json", mu=0, sigma=1, indpb=0.1,
+               tournsize=3, min_value=-3, max_value=3, min_strategy=0, max_strategy=1, alpha=0.1):
+    creator.create("Fitness", base.Fitness, weights=(weights,))
 
     creator.create("Individual", MyIndividual, typecode="d", fitness=creator.Fitness, V_strategy=None,
                    gama_strategy=None)
@@ -30,8 +27,12 @@ def initialize(X, y, n, m, minimize=True, path_to_json_initializer="guess.json",
     toolbox.register("population_guess", initPopulation, list, toolbox.individual_guess, path_to_json_initializer, n, m,
                      creator.Strategy, min_value, max_value, min_strategy, max_strategy)
 
-    toolbox.register("mate", cxTwoPoint)  # TODO choose better crossover method for ES
+    # toolbox.register("mate", cxTwoPoint)
     toolbox.register("mutate", mutGaussian, mu, sigma, indpb)  # TODO choose better mutation method for ES
+    toolbox.register("mate", cxESBlend, alpha=alpha)
+    # toolbox.register("mutate", tools.mutESLogNormal, c=1.0, indpb=0.03)
+    toolbox.decorate("mate", checkStrategy(min_strategy))
+    # toolbox.decorate("mutate", checkStrategy(MIN_STRATEGY))
     toolbox.register("select", selTournament, tournsize=tournsize)  # TODO choose better selection method for ES
     toolbox.register("evaluate", evaluate, n, m, X, y)
 
@@ -202,3 +203,44 @@ def checkStrategy(minstrategy):
         return wrappper
 
     return decorator
+
+
+def cxESBlend(ind1, ind2, alpha):
+    """Executes a blend crossover on both, the individual and the strategy. The
+    individuals shall be a :term:`numpy.ndarray` and must have a :term:`sequence`
+    :attr:`strategy` attribute. Adjustement of the minimal strategy shall be done
+    after the call to this function, consider using a decorator.
+
+    :param ind1: The first evolution strategy participating in the crossover.
+    :param ind2: The second evolution strategy participating in the crossover.
+    :param alpha: Extent of the interval in which the new values can be drawn
+                  for each attribute on both side of the parents' attributes.
+    :returns: A tuple of two evolution strategies.
+
+    This function uses the :func:`~random.random` function from the python base
+    :mod:`random` module.
+    """
+
+    for i, (x1, s1, x2, s2) in enumerate(zip(ind1.V[0, :], ind1.V_strategy,
+                                             ind2.V[0, :], ind2.V_strategy)):
+        # Blend the values
+        gamma = (1. + 2. * alpha) * random.random() - alpha
+        ind1.V[0, i] = (1. - gamma) * x1 + gamma * x2
+        ind2.V[0, i] = gamma * x1 + (1. - gamma) * x2
+        # Blend the strategies
+        gamma = (1. + 2. * alpha) * random.random() - alpha
+        ind1.V_strategy[i] = (1. - gamma) * s1 + gamma * s2
+        ind2.V_strategy[i] = gamma * s1 + (1. - gamma) * s2
+
+    for i, (x1, s1, x2, s2) in enumerate(zip(ind1.gama[0, :], ind1.gama_strategy,
+                                             ind2.gama[0, :], ind2.gama_strategy)):
+        # Blend the values
+        gamma = (1. + 2. * alpha) * random.random() - alpha
+        ind1.gama[0, i] = (1. - gamma) * x1 + gamma * x2
+        ind2.gama[0, i] = gamma * x1 + (1. - gamma) * x2
+        # Blend the strategies
+        gamma = (1. + 2. * alpha) * random.random() - alpha
+        ind1.gama_strategy[i] = (1. - gamma) * s1 + gamma * s2
+        ind2.gama_strategy[i] = gamma * s1 + (1. - gamma) * s2
+
+    return ind1, ind2
