@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 
 
 def g_function(x, v, gama):
@@ -26,10 +27,18 @@ def generate_W_matrix(G, y):
         res = np.dot(np.dot(np.linalg.pinv(np.dot(G.T, G)), G.T), y)
         return res
     except np.linalg.LinAlgError:
-        print("SVD Convergence Error.")
+        # print("SVD Convergence Error.")
+        print("..")
         _, m = G.shape
+        TYPE_OF_PROBLEM = int(sys.argv[4])
         # TODO is it OK to fill with random numbers?
-        res = np.random.uniform(low=-1, high=1, size=m)
+        res = None
+        if TYPE_OF_PROBLEM == 0 or TYPE_OF_PROBLEM == 1:
+            res = np.random.uniform(low=-1, high=1, size=m)
+        elif TYPE_OF_PROBLEM == 2:
+            _, c = y.shape
+            res = np.random.uniform(low=-1, high=1, size=m * c).reshape(m, c)
+        assert res is not None
         return res
 
 
@@ -43,7 +52,7 @@ def mse(y, yhad):
 
 
 def evaluate_parameters(V, gama, X, y):
-    from main import TYPE_OF_PROBLEM
+    TYPE_OF_PROBLEM = int(sys.argv[4])
     G = generate_G_matrix(X, V, gama)
     W = generate_W_matrix(G, y)
     yhad = generate_yhad_matrix(G, W)
@@ -60,7 +69,7 @@ def evaluate_parameters(V, gama, X, y):
 
 
 def get_precision(X, y, V, gama):
-    from main import TYPE_OF_PROBLEM
+    TYPE_OF_PROBLEM = int(sys.argv[4])
     G = generate_G_matrix(X, V, gama)
     W = generate_W_matrix(G, y)
     yhad = generate_yhad_matrix(G, W)
