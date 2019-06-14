@@ -91,6 +91,6 @@ def get_precision(X, y, V, gama):
         b[np.arange(len(yhad)), yhad.argmax(1)] = 1
         yhad = b
         abs_diff = np.abs(np.subtract(yhad, y))
-        precision = 1 - np.matrix.sum(abs_diff) / (2 * L)
+        precision = 1 - np.sum(abs_diff) / (2 * L)
     assert precision is not None
     return precision
