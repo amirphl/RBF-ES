@@ -70,7 +70,7 @@ def evaluate_parameters(V, gama, X, y):
         b[np.arange(len(yhad)), yhad.argmax(1)] = 1
         yhad = b
         abs_diff = np.abs(np.subtract(yhad, y))
-        error = np.matrix.sum(abs_diff) / 2
+        error = np.sum(abs_diff) / 2
     assert error is not None
     return error
 
