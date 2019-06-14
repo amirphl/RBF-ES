@@ -27,15 +27,14 @@ def generate_W_matrix(G, y):
         res = np.dot(np.dot(np.linalg.pinv(np.dot(G.T, G)), G.T), y)
         return res
     except np.linalg.LinAlgError:
-        # print("SVD Convergence Error.")
         print("..")
         _, m = G.shape
-        TYPE_OF_PROBLEM = int(sys.argv[4])
+        type_of_problem = int(sys.argv[4])
         # TODO is it OK to fill with random numbers?
         res = None
-        if TYPE_OF_PROBLEM == 0 or TYPE_OF_PROBLEM == 1:
+        if type_of_problem == 0 or type_of_problem == 1:
             res = np.random.uniform(low=-1, high=1, size=m)
-        elif TYPE_OF_PROBLEM == 2:
+        elif type_of_problem == 2:
             _, c = y.shape
             res = np.random.uniform(low=-1, high=1, size=m * c).reshape(m, c)
         assert res is not None
@@ -52,41 +51,46 @@ def mse(y, yhad):
 
 
 def evaluate_parameters(V, gama, X, y):
-    TYPE_OF_PROBLEM = int(sys.argv[4])
     G = generate_G_matrix(X, V, gama)
     W = generate_W_matrix(G, y)
     yhad = generate_yhad_matrix(G, W)
     error = None
-    if TYPE_OF_PROBLEM == 0:
+    type_of_problem = int(sys.argv[4])
+
+    if type_of_problem == 0:
         error = mse(y, yhad)
-    elif TYPE_OF_PROBLEM == 1:
+    elif type_of_problem == 1:
         yhad = np.where(yhad > 0, 1, -1)
         error = mse(y, yhad) / 2
-    elif TYPE_OF_PROBLEM == 2:
-        # TODO
-        pass
+    elif type_of_problem == 2:
+        # TODO bad idea
+        l, _ = yhad.shape
+        error = 0
+        b = np.zeros_like(yhad)
+        b[np.arange(len(yhad)), yhad.argmax(1)] = 1
+        yhad = b
+        abs_diff = np.abs(np.subtract(yhad, y))
+        error = np.matrix.sum(abs_diff) / 2
+    assert error is not None
     return error
 
 
 def get_precision(X, y, V, gama):
-    TYPE_OF_PROBLEM = int(sys.argv[4])
     G = generate_G_matrix(X, V, gama)
     W = generate_W_matrix(G, y)
     yhad = generate_yhad_matrix(G, W)
     L, _ = G.shape
     precision = None
-    if TYPE_OF_PROBLEM == 1:
+    type_of_problem = int(sys.argv[4])
+
+    if type_of_problem == 1:
         yhad = np.where(yhad > 0, 1, -1)
         precision = 1 - mse(y, yhad) / (2 * L)
-    elif TYPE_OF_PROBLEM == 2:
-        # TODO
-        pass
+    elif type_of_problem == 2:
+        b = np.zeros_like(yhad)
+        b[np.arange(len(yhad)), yhad.argmax(1)] = 1
+        yhad = b
+        abs_diff = np.abs(np.subtract(yhad, y))
+        precision = 1 - np.matrix.sum(abs_diff) / (2 * L)
+    assert precision is not None
     return precision
-
-
-def get_train_error(X, y, V, gama):
-    G = generate_G_matrix(X, V, gama)
-    W = generate_W_matrix(G, y)
-    yhad = generate_yhad_matrix(G, W)
-    error = mse(y, yhad)
-    return error
