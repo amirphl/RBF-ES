@@ -1,12 +1,9 @@
-from es_utils import *
-from network_utils import get_precision, generate_W_matrix, generate_G_matrix, get_train_error
 import sys
 import csv
-import random
 import deap.algorithms as al
 from deap import tools
-
-TYPE_OF_PROBLEM = 0  # 0 : regression , 1 : classification with 2 class , 2 : classification with more than 2 class
+from es_utils import *
+from network_utils import get_precision, generate_W_matrix, generate_G_matrix
 
 
 def generic_train(toolbox, pop_size=10, CXPB=0.5, MUTPB=0.2, NGEN=20):
@@ -79,15 +76,21 @@ def train(toolbox, mu=10, m_lambda=100, cxpb=0.6, mutpb=0.3, ngen=10):
     return pop, logbook, hof
 
 
-def prepare_data(number_of_lines, path):
+def prepare_data(number_of_lines, path, shuffle=1):
     with open(path, 'r') as f:
         train_data = list(csv.reader(f, delimiter=","))
+    train_data = train_data[1::]
 
     if number_of_lines > len(train_data):
-        print("Not enough lines in data file, used", len(train_data), "lines instead.")
+        print("Not enough lines in data file to read, instead used", len(train_data), "lines.")
         number_of_lines = len(train_data)
 
-    train_data = np.array(train_data[0:number_of_lines], dtype=np.float32)
+    if shuffle == 1:
+        train_data = random.choices(train_data, k=number_of_lines)
+        print("data shuffled...")
+    else:
+        train_data = train_data[0:number_of_lines]
+    train_data = np.array(train_data, dtype=np.float32)
     r, c = train_data.shape
     y = train_data[:, c - 1]
     X = train_data[:, 0:c - 1]
@@ -96,10 +99,19 @@ def prepare_data(number_of_lines, path):
     scales = []
     for i in range(n):
         # X[:, i] = X[:, i] / np.linalg.norm(X[:, i])
-        my_max = X[:, i].max()
-        X[:, i] = X[:, i] / my_max
-        scales.append(my_max)
-    return X, y, L, n, scales
+        scales.append(X[:, i].max())
+        X[:, i] = X[:, i] / X[:, i].max()
+
+    return X, y, scales
+
+
+def prepare_data_for_multi_class_classification(y):
+    l = y.shape[0]
+    c = int(np.max(y))
+    y_prime = np.zeros(shape=(l, c), dtype=np.float32)
+    for i in range(l):
+        y_prime[i, int(y[i]) - 1] = 1.0
+    return y_prime
 
 
 def store_network_weights(X, y, V, gama):
@@ -113,29 +125,39 @@ def store_network_weights(X, y, V, gama):
     print("gama:")
     print(gama)
 
-    np.save(file="weights.npy", arr=W)
-    np.save(file="V.npy", arr=V)
-    np.save(file="gama.npy", arr=gama)
+    top = sys.argv[4]
+    np.save(file="outputs/weights" + top + ".npy", arr=W)
+    np.save(file="outputs/V" + top + ".npy", arr=V)
+    np.save(file="outputs/gama" + top + ".npy", arr=gama)
 
 
 if __name__ == '__main__':
     path_to_train_data = str(sys.argv[1])
     lines = int(sys.argv[2])  # number of lines to be read from train data
     m = int(sys.argv[3])  # number of V vectors
-    TYPE_OF_PROBLEM = int(sys.argv[4])
+    type_of_problem = int(sys.argv[4])
+    m_ngen = int(sys.argv[5])  # number of generations
+    m_shuffle = int(sys.argv[6])  # shuffle = 1 or not
 
-    X, y, L, n, scales = prepare_data(lines, path_to_train_data)
+    m_X, m_y, m_scales = prepare_data(lines, path_to_train_data, shuffle=m_shuffle)
+    m_l, m_n = m_X.shape
+    m_min_value = m_X.min()
+    m_max_value = m_X.max()
+    m_c = 0
 
-    toolbox = initialize(X, y, n=n, m=m, mu=10)
+    if type_of_problem == 2:
+        m_y = prepare_data_for_multi_class_classification(m_y)
+        _, m_c = m_y.shape
 
-    pop, logbook, hof = train(toolbox, mu=10)
+    toolbox = initialize(m_X, m_y, n=m_n, m=m, mu=10, min_value=m_min_value, max_value=m_max_value)
+    m_pop, m_logbook, m_hof = train(toolbox, mu=10, ngen=m_ngen)
 
-    ind = hof.items[0]
-    V = ind.V.reshape(m, n)
-    gama = ind.gama
+    m_ind = m_hof.items[0]
+    m_V = m_ind.V.reshape(m, m_n)
+    m_gama = m_ind.gama
 
-    print("Error on train data set:", evaluate_parameters(V, gama, X, y))
-    if TYPE_OF_PROBLEM == 1 or TYPE_OF_PROBLEM == 2:
-        print("Precision on train data set:", get_precision(X, y, V, gama))
+    print("Error on train data set:", evaluate_parameters(m_V, m_gama, m_X, m_y))
+    if type_of_problem == 1 or type_of_problem == 2:
+        print("Precision on train data set:", get_precision(m_X, m_y, m_V, m_gama))
 
-    store_network_weights(X, y, V, gama)
+    store_network_weights(m_X, m_y, m_V, m_gama)
