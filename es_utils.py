@@ -14,7 +14,7 @@ class MyIndividual:
 
 
 def initialize(X, y, n, m, mu=10, weights=-1.0, c=1, indpb=0.03,
-               tournsize=5, min_value=0, max_value=1, min_strategy=0, max_strategy=1, alpha=0.1):
+               tournsize=5, min_value=-0.5, max_value=1, min_strategy=0, max_strategy=1, alpha=0.1):
     creator.create("Fitness", base.Fitness, weights=(weights,))
 
     creator.create("Individual", MyIndividual, typecode="d", fitness=creator.Fitness, V_strategy=None,
@@ -33,7 +33,7 @@ def initialize(X, y, n, m, mu=10, weights=-1.0, c=1, indpb=0.03,
     toolbox.register("mutate", mutESLogNormal, c=c, indpb=indpb)
     toolbox.decorate("mate", checkStrategy(min_strategy))
     toolbox.decorate("mutate", checkStrategy(min_strategy))
-    toolbox.register("select", selTournament, tournsize=tournsize)  # TODO choose better selection method for ES
+    toolbox.register("select", selTournament, tournsize=tournsize)
     toolbox.register("evaluate", evaluate, n, m, X, y)
 
     return toolbox
@@ -41,7 +41,7 @@ def initialize(X, y, n, m, mu=10, weights=-1.0, c=1, indpb=0.03,
 
 def initIndividual(icls, n, m, scls, imin, imax, smin, smax):
     V_vector = np.random.uniform(imin, imax, m * n).reshape(1, m * n)
-    gama_vector = np.random.uniform(imin, imax, m).reshape(1, m)
+    gama_vector = np.random.uniform(0, imax, m).reshape(1, m)
     # V_strategy = scls(np.random.uniform(smin, smax, m * n))
     # gama_strategy = scls(np.random.uniform(smin, smax, m))
     V_strategy = scls(random.uniform(smin, smax) for _ in range(m * n))
