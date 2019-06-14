@@ -1,2 +1,5 @@
 *.npy
 *.xml
+report/*
+outputs/*
+test.py
