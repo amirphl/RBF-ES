@@ -64,8 +64,6 @@ def evaluate_parameters(V, gama, X, y):
         error = mse(y, yhad) / 2
     elif type_of_problem == 2:
         # TODO bad idea
-        l, _ = yhad.shape
-        error = 0
         b = np.zeros_like(yhad)
         b[np.arange(len(yhad)), yhad.argmax(1)] = 1
         yhad = b
