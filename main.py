@@ -76,7 +76,7 @@ def train(toolbox, mu=10, m_lambda=100, cxpb=0.6, mutpb=0.3, ngen=10):
     return pop, logbook, hof
 
 
-def prepare_data(number_of_lines, path, shuffle=1):
+def prepare_data(number_of_lines, path, shuffle=0):
     with open(path, 'r') as f:
         train_data = list(csv.reader(f, delimiter=","))
     train_data = train_data[1::]
