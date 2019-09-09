@@ -1,0 +1,4 @@
+shuffling
+1D array vs 2D array
+normalization
+bounds
